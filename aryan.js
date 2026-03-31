@@ -1167,17 +1167,15 @@ if (conf.AUTO_READ === 'yes') {
      try {
         const yes = await verifierEtatJid(origineMessage);
 
-        // Detect links - https, http, and WhatsApp group links
+        // Detect all link types
         const urlRegex = /(https?:\/\/[^\s]+|chat\.whatsapp\.com\/[^\s]+)/gi;
         const hasLink = texte && urlRegex.test(texte);
 
         if (hasLink && verifGroupe && yes) {
             console.log("link detected");
 
-            // Check if bot is admin
-            const verifZokAdmin = admins.includes(idBot);
-
-            if (!verifZokAdmin) {
+            // Check bot is admin - use verifZokouAdmin already calculated above
+            if (!verifZokouAdmin) {
                 console.log('bot is not admin, cannot enforce antilink');
             } else if (superUser || verifAdmin) {
                 console.log('user is admin or owner, skipping antilink');
@@ -1191,7 +1189,7 @@ if (conf.AUTO_READ === 'yes') {
 
                 const action = await recupererActionJid(origineMessage);
 
-                // Delete the link message first
+                // Always delete message first
                 try {
                     await zk.sendMessage(origineMessage, { delete: key });
                 } catch (e) {
@@ -1199,7 +1197,7 @@ if (conf.AUTO_READ === 'yes') {
                 }
 
                 if (action === 'remove') {
-                    const txt = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} has been removed for sharing a link.`;
+                    const txt = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} amefutwa kwa kutuma link.`;
                     await zk.sendMessage(origineMessage, { text: txt, mentions: [auteurMessage] }, { quoted: ms });
                     try {
                         await zk.groupParticipantsUpdate(origineMessage, [auteurMessage], "remove");
@@ -1208,7 +1206,7 @@ if (conf.AUTO_READ === 'yes') {
                     }
 
                 } else if (action === 'delete') {
-                    const txt = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} links are not allowed here.`;
+                    const txt = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} links hairuhusiwi hapa.`;
                     await zk.sendMessage(origineMessage, { text: txt, mentions: [auteurMessage] }, { quoted: ms });
 
                 } else if (action === 'warn') {
@@ -1217,7 +1215,7 @@ if (conf.AUTO_READ === 'yes') {
                     let warnlimit = conf.WARN_COUNT;
 
                     if (warn >= warnlimit) {
-                        const kikmsg = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} reached warn limit and has been removed.`;
+                        const kikmsg = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} amefika warn limit, amefutwa.`;
                         await zk.sendMessage(origineMessage, { text: kikmsg, mentions: [auteurMessage] }, { quoted: ms });
                         try {
                             await zk.groupParticipantsUpdate(origineMessage, [auteurMessage], "remove");
@@ -1227,12 +1225,11 @@ if (conf.AUTO_READ === 'yes') {
                     } else {
                         await ajouterUtilisateurAvecWarnCount(auteurMessage);
                         let rest = warnlimit - (warn + 1);
-                        const msg = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} warned for sharing a link.\nWarnings remaining: ${rest}`;
+                        const msg = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} ameonya kwa link.\nOnyo zilizobaki: ${rest}`;
                         await zk.sendMessage(origineMessage, { text: msg, mentions: [auteurMessage] }, { quoted: ms });
                     }
                 } else {
-                    // Default - just delete and warn
-                    const txt = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} links are not allowed in this group.`;
+                    const txt = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} links hairuhusiwi katika group hii.`;
                     await zk.sendMessage(origineMessage, { text: txt, mentions: [auteurMessage] }, { quoted: ms });
                 }
             }
