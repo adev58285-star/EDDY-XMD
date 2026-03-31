@@ -1,4 +1,4 @@
 
 
 
-web: node aryan.js && node busta.js
+web: node aryan.js && node aryan.js
