@@ -1,4 +1,3 @@
 
 
-
-web: node aryan.js && node aryan.js
+web: node --max-old-space-size=450 --no-deprecation aryan.js
