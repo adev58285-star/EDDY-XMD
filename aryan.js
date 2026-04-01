@@ -1163,89 +1163,123 @@ if (conf.AUTO_READ === 'yes') {
             } 
 
 
-     //anti-lien
+     // ============= ANTI-LINK HANDLER =============
      try {
-        const yes = await verifierEtatJid(origineMessage);
+        const isAntiLinkEnabled = await verifierEtatJid(origineMessage);
 
-        // Extract text from ALL message types
+        // Detect links from all message types
         const allText = texte ||
             ms?.message?.extendedTextMessage?.text ||
             ms?.message?.imageMessage?.caption ||
             ms?.message?.videoMessage?.caption ||
             ms?.message?.documentMessage?.caption || "";
 
-        // Detect links: https, http, WhatsApp group invites
-        const urlRegex = /(https?:\/\/[^\s]+|chat\.whatsapp\.com\/[^\s]+)/gi;
-        const hasLink = allText && urlRegex.test(allText);
+        const hasLink = allText && (
+            allText.includes("http://") ||
+            allText.includes("https://") ||
+            allText.includes("www.") ||
+            allText.includes("chat.whatsapp.com/")
+        );
 
-        if (hasLink && verifGroupe && yes) {
-            console.log("antilink: link detected in group");
+        console.log("ANTI-LINK CHECK:", {
+            hasLink,
+            isEnabled: isAntiLinkEnabled,
+            isGroup: verifGroupe,
+            text: allText ? allText.substring(0, 50) : "no text"
+        });
 
-            if (!verifZokouAdmin) {
-                console.log("antilink: bot is not admin, skipping");
-            } else if (superUser || verifAdmin) {
-                console.log("antilink: sender is admin or owner, skipping");
+        if (hasLink && verifGroupe && isAntiLinkEnabled) {
+            console.log("LINK DETECTED in group!");
+
+            // Skip admins and owners
+            if (superUser || verifAdmin) {
+                console.log("antilink: user is admin/owner, skipping");
             } else {
-                const key = {
+                const messageToDelete = {
                     remoteJid: origineMessage,
                     fromMe: false,
                     id: ms.key.id,
                     participant: auteurMessage
                 };
 
-                const action = await recupererActionJid(origineMessage);
-
-                // Delete the message first
+                // Delete the message
                 try {
-                    await zk.sendMessage(origineMessage, { delete: key });
+                    await zk.sendMessage(origineMessage, { delete: messageToDelete });
                     console.log("antilink: message deleted successfully");
                 } catch (e) {
-                    console.log("antilink: failed to delete message - " + e);
+                    console.log("antilink: delete failed - " + e.message);
+                    // Even if delete fails, send warning
+                    await zk.sendMessage(origineMessage, {
+                        text: `⚠️ *ANTI-LINK*
+@${auteurMessage.split('@')[0]} links are not allowed in this group!`,
+                        mentions: [auteurMessage]
+                    }, { quoted: ms });
+                    return;
                 }
 
+                const action = await recupererActionJid(origineMessage);
+                console.log("antilink action:", action);
+
                 if (action === 'remove') {
-                    const txt = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} has been removed for sharing a link.`;
-                    await zk.sendMessage(origineMessage, { text: txt, mentions: [auteurMessage] }, { quoted: ms });
+                    await zk.sendMessage(origineMessage, {
+                        text: `🚨 *ANTI-LINK*
+@${auteurMessage.split('@')[0]} has been removed for sharing a link.
+
+🚫 Links are not allowed in this group!`,
+                        mentions: [auteurMessage]
+                    }, { quoted: ms });
                     try {
                         await zk.groupParticipantsUpdate(origineMessage, [auteurMessage], "remove");
-                        console.log("antilink: user removed from group");
+                        console.log("antilink: user removed");
                     } catch (e) {
-                        console.log("antilink: failed to remove user - " + e);
+                        console.log("antilink: remove failed - " + e);
                     }
-
-                } else if (action === 'delete') {
-                    const txt = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} links are not allowed in this group.`;
-                    await zk.sendMessage(origineMessage, { text: txt, mentions: [auteurMessage] }, { quoted: ms });
 
                 } else if (action === 'warn') {
                     const { getWarnCountByJID, ajouterUtilisateurAvecWarnCount } = require('./bdd/warn');
-                    let warn = await getWarnCountByJID(auteurMessage);
-                    let warnlimit = conf.WARN_COUNT;
+                    let warnCount = await getWarnCountByJID(auteurMessage);
+                    let maxWarns = conf.WARN_COUNT || 3;
 
-                    if (warn >= warnlimit) {
-                        const kikmsg = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} has been removed for reaching the warn limit.`;
-                        await zk.sendMessage(origineMessage, { text: kikmsg, mentions: [auteurMessage] }, { quoted: ms });
+                    if (warnCount >= maxWarns) {
+                        await zk.sendMessage(origineMessage, {
+                            text: `⚠️ *ANTI-LINK - FINAL WARNING*
+@${auteurMessage.split('@')[0]} has been removed after ${maxWarns} warnings.
+
+🚫 Links are not allowed in this group!`,
+                            mentions: [auteurMessage]
+                        }, { quoted: ms });
                         try {
                             await zk.groupParticipantsUpdate(origineMessage, [auteurMessage], "remove");
                         } catch (e) {
-                            console.log("antilink: warn-remove error - " + e);
+                            console.log("antilink: warn-remove failed - " + e);
                         }
                     } else {
                         await ajouterUtilisateurAvecWarnCount(auteurMessage);
-                        let rest = warnlimit - (warn + 1);
-                        const msg = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} warned for sharing a link.\nWarnings remaining: ${rest}`;
-                        await zk.sendMessage(origineMessage, { text: msg, mentions: [auteurMessage] }, { quoted: ms });
+                        await zk.sendMessage(origineMessage, {
+                            text: `⚠️ *ANTI-LINK WARNING*
+@${auteurMessage.split('@')[0]} links are not allowed!
+
+⚠️ Warning ${warnCount + 1}/${maxWarns}`,
+                            mentions: [auteurMessage]
+                        }, { quoted: ms });
                     }
+
                 } else {
-                    // Default action: delete and warn
-                    const txt = `⚠️ *ANTI-LINK*\n@${auteurMessage.split('@')[0]} links are not allowed in this group.`;
-                    await zk.sendMessage(origineMessage, { text: txt, mentions: [auteurMessage] }, { quoted: ms });
+                    // Default: delete only
+                    await zk.sendMessage(origineMessage, {
+                        text: `⚠️ *ANTI-LINK*
+@${auteurMessage.split('@')[0]} your message has been deleted.
+
+🚫 Links are not allowed in this group!`,
+                        mentions: [auteurMessage]
+                    }, { quoted: ms });
                 }
             }
         }
     } catch (e) {
         console.log("antilink error: " + e);
     }
+    // ============= END ANTI-LINK HANDLER =============
 
         /** *************************anti-bot******************************************** */
     try {
