@@ -8,7 +8,7 @@ zokou({ nomCom: "repo", categorie: "General", reaction: "❄" }, async (dest, zk
   const { ms, repondre, auteurMessage } = commandeOptions;
   
   // GitHub API link
-  const repoApi = "https://github.com/adev58285-star/ARYAN-TECH1";
+  const repoApi = "https://github.com/adev58285-star/EDDY-XMD/tree/main";
   const img = 'https://files.catbox.moe/e51g2r.jpg';
   const channelJid = "120363420172397674@newsletter";
 
@@ -25,7 +25,7 @@ zokou({ nomCom: "repo", categorie: "General", reaction: "❄" }, async (dest, zk
       // gitdata now starts with a mention
       const gitdata = `Hello @${auteurMessage.split('@')[0]}, *𝗜 𝗮𝗺* *ARYAN-TECH.*\n  
 ╭─────────────━┈⊷•
-│🎲│ *𝗣𝗮𝗶𝗿 𝗰𝗼𝗱𝗲:* https://Aryan-happ-new-year-2026.onrender.com
+│🎲│ *𝗣𝗮𝗶𝗿 𝗰𝗼𝗱𝗲:* https://github.com/adev58285-star/EDDY-XMD/tree/main
 │🪔│ *𝗥𝗲𝗽𝗼:* ${data.html_url}
 │🌟│ *𝗦𝘁𝗮𝗿𝘀:* ${stars}
 │🪡│ *𝗙𝗼𝗿𝗸𝘀:* ${forks}
