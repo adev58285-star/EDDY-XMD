@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://files.catbox.moe/12khvr.jpg" alt="ARYAN-DEV" width="300"/>
+  <img src="https://files.catbox.moe/gxckt0.jpg" alt="∆RY∆N-TECH" width="300"/>
 </p>
 
 <p align="center">
