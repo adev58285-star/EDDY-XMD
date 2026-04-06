@@ -1,29 +1,30 @@
+
 const { zokou } = require("../framework/zokou");
-const conf = require("../set");
 
 zokou({
-    nomCom: "statusmentions",
-    reaction: "🛡️",
-    categorie: "Group"
-}, async (dest, zk, reponse) => {
-    const { ms, arg, superUser, verifAdmin } = reponse;
+  nomCom: "antimention",
+  categorie: "Group",
+  reaction: "🛡️"
+}, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, arg, verifGroupe, isAdmin, isBotAdmin } = commandeOptions;
 
-    // Restriction: Admins only
-    if (!superUser && !verifAdmin) {
-        return zk.sendMessage(dest, { text: "❌ Access Denied! This is an Admin-only command." }, { quoted: ms });
-    }
+  if (!verifGroupe) return repondre("This command is for groups only.");
+  if (!isAdmin) return repondre("Access denied. This command is for Admins only.");
+  if (!isBotAdmin) return repondre("Please make the bot an admin first.");
 
-    if (!arg[0]) {
-        return zk.sendMessage(dest, { 
-            text: `*STATUS MENTIONS PROTECTION*\n\nCurrent Status: *${conf.STATUS_MENTIONS || "off"}*\n\n🔹 *.statusmentions on* - Enable 3-Warn Protect\n🔹 *.statusmentions off* - Disable Protection` 
-        }, { quoted: ms });
-    }
+  if (!arg || arg.length === 0) {
+    return repondre("Usage:\n*antimention on* - Enable protection\n*antimention off* - Disable protection");
+  }
 
-    if (arg[0].toLowerCase() === "on") {
-        conf.STATUS_MENTIONS = "on";
-        await zk.sendMessage(dest, { text: "✅ *Status Mentions protection is now ENABLED.* Users will receive 3 warnings before being kicked." }, { quoted: ms });
-    } else {
-        conf.STATUS_MENTIONS = "off";
-        await zk.sendMessage(dest, { text: "❌ *Status Mentions protection is now DISABLED.*" }, { quoted: ms });
-    }
+  const status = arg.toLowerCase();
+
+  if (status === "on") {
+    global.antimention = true; // Temporary state. Ideally, link this to your MongoDB.
+    repondre("🛡️ **Anti-Mention is now ENABLED.** The bot will delete any unauthorized tags.");
+  } else if (status === "off") {
+    global.antimention = false;
+    repondre("🛡️ **Anti-Mention is now DISABLED.**");
+  } else {
+    repondre("Please use 'on' or 'off'.");
+  }
 });
