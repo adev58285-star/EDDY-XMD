@@ -27,3 +27,4 @@ zokou({
         await zk.sendMessage(dest, { text: "❌ *Anti-Sticker is now DISABLED.*" }, { quoted: ms });
     }
 });
+            
