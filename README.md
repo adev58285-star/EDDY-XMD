@@ -21,12 +21,8 @@
 ---
 
 ## 🔑 ɢᴇɴᴇʀᴀᴛᴇ sᴇssɪᴏɴ ɪᴅ
-<p align="center">"https://session-id-site-fycn.onrender.com">
-    <img
-  <a href="https://session-id-site-fycn.onrender.com>
-    <img src="https://img.shields.io/badge/GENERATE-SESSION_ID-FF00FF?style=for-the-badge&logo=appveyor&logoColor=white" width="380" height="70"/>
-  </a>
-</p>
+
+<a href="https://session-id-site-fycn.onrender.com"><img title="GET-SESSION ID HERE" src="https://img.shields.io/badge/GET-SESSION ID HERE-h?color=blue&style=for-the-badge&logo=B" width="230" height="38.45"/></a></p>
 
 ---
 
