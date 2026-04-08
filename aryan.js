@@ -1323,7 +1323,7 @@ if (conf.AUTO_READ === 'yes') {
 
                 if (action === 'remove') {
                     await zk.sendMessage(origineMessage, {
-                        text: `🚫 *ANTI-MENTION | RAHMANI MD*\n@${mentionAuteur.split('@')[0]} has been removed for mentioning the group in their status!`,
+                        text: `🚫 *ANTI-MENTION* |\n@${mentionAuteur.split('@')[0]} has been removed for mentioning the group in their status!`,
                         mentions: [mentionAuteur]
                     });
                     try { await zk.groupParticipantsUpdate(origineMessage, [mentionAuteur], "remove"); } catch (e) {}
@@ -1334,21 +1334,21 @@ if (conf.AUTO_READ === 'yes') {
                     let maxWarns = conf.WARN_COUNT || 3;
                     if (warnCount >= maxWarns) {
                         await zk.sendMessage(origineMessage, {
-                            text: `⚠️ *ANTI-MENTION | RAHMANI MD*\n@${mentionAuteur.split('@')[0]} has been removed after ${maxWarns} warnings!`,
+                            text: `⚠️ *ANTI-MENTION* |\n@${mentionAuteur.split('@')[0]} has been removed after ${maxWarns} warnings!`,
                             mentions: [mentionAuteur]
                         });
                         try { await zk.groupParticipantsUpdate(origineMessage, [mentionAuteur], "remove"); } catch (e) {}
                     } else {
                         await ajouterUtilisateurAvecWarnCount(mentionAuteur);
                         await zk.sendMessage(origineMessage, {
-                            text: `⚠️ *ANTI-MENTION WARNING | RAHMANI MD*\n@${mentionAuteur.split('@')[0]} mentioning the group in your status is not allowed!\n\n⚠️ Warning ${warnCount + 1}/${maxWarns}`,
+                            text: `⚠️ *ANTI-MENTION WARNING* |\n@${mentionAuteur.split('@')[0]} mentioning the group in your status is not allowed!\n\n⚠️ Warning ${warnCount + 1}/${maxWarns}`,
                             mentions: [mentionAuteur]
                         });
                     }
 
                 } else {
                     await zk.sendMessage(origineMessage, {
-                        text: `🛡️ *ANTI-MENTION | RAHMANI MD*\n@${mentionAuteur.split('@')[0]} mentioning the group in your status is not allowed!`,
+                        text: `🛡️ *ANTI-MENTION* |\n@${mentionAuteur.split('@')[0]} mentioning the group in your status is not allowed!`,
                         mentions: [mentionAuteur]
                     });
                 }
