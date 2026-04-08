@@ -41,6 +41,7 @@ const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter')
 //import chalk from 'chalk'
 const { verifierEtatJid , recupererActionJid } = require("./bdd/antilien");
 const { atbverifierEtatJid , atbrecupererActionJid } = require("./bdd/antibot");
+const { amVerifierEtatJid, amRecupererActionJid } = require("./bdd/antimention");
 let evt = require(__dirname + "/framework/zokou");
 const {isUserBanned , addUserToBanList , removeUserFromBanList} = require("./bdd/banUser");
 const  {addGroupToBanList,isGroupBanned,removeGroupFromBanList} = require("./bdd/banGroup");
@@ -1280,6 +1281,83 @@ if (conf.AUTO_READ === 'yes') {
         console.log("antilink error: " + e);
     }
     // ============= END ANTI-LINK HANDLER =============
+
+    // ============= ANTI-MENTION HANDLER | by Rahmani Md =============
+    try {
+        const isAntiMentionEnabled = await amVerifierEtatJid(origineMessage);
+
+        if (verifGroupe && isAntiMentionEnabled) {
+            const isStatusMention = mtype === 'groupStatusMentionMessage' ||
+                                    !!ms.message?.groupStatusMentionMessage;
+
+            let mentionAuteur = auteurMessage;
+            if (isStatusMention) {
+                const nested = ms.message?.groupStatusMentionMessage;
+                mentionAuteur = nested?.participant || nested?.key?.participant || ms.key?.participant || auteurMessage;
+            }
+
+            const mentions = ms.message?.extendedTextMessage?.contextInfo?.mentionedJid ||
+                             ms.message?.imageMessage?.contextInfo?.mentionedJid ||
+                             ms.message?.videoMessage?.contextInfo?.mentionedJid ||
+                             ms.message?.groupStatusMentionMessage?.message?.extendedTextMessage?.contextInfo?.mentionedJid ||
+                             ms.message?.groupStatusMentionMessage?.message?.imageMessage?.contextInfo?.mentionedJid ||
+                             ms.message?.groupStatusMentionMessage?.message?.videoMessage?.contextInfo?.mentionedJid || [];
+
+            const allText = texte || ms?.message?.extendedTextMessage?.text || "";
+            const hasBroadTag = allText.includes('@everyone') || allText.includes('@here') || allText.includes('@all');
+
+            const allAllowedNumbersForMention = [...(allAllowedNumbers || [])];
+            const isMentionSuperUser = allAllowedNumbersForMention.includes(mentionAuteur);
+            const isMentionAdmin = verifAdmin && mentionAuteur === auteurMessage;
+
+            if ((mentions.length > 0 || hasBroadTag || isStatusMention) && !isMentionSuperUser && !isMentionAdmin) {
+                const messageToDelete = {
+                    remoteJid: origineMessage,
+                    fromMe: false,
+                    id: ms.key.id,
+                    participant: mentionAuteur
+                };
+                try { await zk.sendMessage(origineMessage, { delete: messageToDelete }); } catch (e) {}
+
+                const action = await amRecupererActionJid(origineMessage);
+
+                if (action === 'remove') {
+                    await zk.sendMessage(origineMessage, {
+                        text: `🚫 *ANTI-MENTION | RAHMANI MD*\n@${mentionAuteur.split('@')[0]} has been removed for mentioning the group in their status!`,
+                        mentions: [mentionAuteur]
+                    });
+                    try { await zk.groupParticipantsUpdate(origineMessage, [mentionAuteur], "remove"); } catch (e) {}
+
+                } else if (action === 'warn') {
+                    const { getWarnCountByJID, ajouterUtilisateurAvecWarnCount } = require('./bdd/warn');
+                    let warnCount = await getWarnCountByJID(mentionAuteur);
+                    let maxWarns = conf.WARN_COUNT || 3;
+                    if (warnCount >= maxWarns) {
+                        await zk.sendMessage(origineMessage, {
+                            text: `⚠️ *ANTI-MENTION | RAHMANI MD*\n@${mentionAuteur.split('@')[0]} has been removed after ${maxWarns} warnings!`,
+                            mentions: [mentionAuteur]
+                        });
+                        try { await zk.groupParticipantsUpdate(origineMessage, [mentionAuteur], "remove"); } catch (e) {}
+                    } else {
+                        await ajouterUtilisateurAvecWarnCount(mentionAuteur);
+                        await zk.sendMessage(origineMessage, {
+                            text: `⚠️ *ANTI-MENTION WARNING | RAHMANI MD*\n@${mentionAuteur.split('@')[0]} mentioning the group in your status is not allowed!\n\n⚠️ Warning ${warnCount + 1}/${maxWarns}`,
+                            mentions: [mentionAuteur]
+                        });
+                    }
+
+                } else {
+                    await zk.sendMessage(origineMessage, {
+                        text: `🛡️ *ANTI-MENTION | RAHMANI MD*\n@${mentionAuteur.split('@')[0]} mentioning the group in your status is not allowed!`,
+                        mentions: [mentionAuteur]
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        console.log("antimention error: " + e);
+    }
+    // ============= END ANTI-MENTION HANDLER =============
 
         /** *************************anti-bot******************************************** */
     try {
